@@ -7,4 +7,4 @@
 
 1. convert mp3 to mpeg
 
-    `$ ffmpeg -i theidiot_01_dostoyevsky_64kb.mp3 theidiot_01_dostoyevsky_64kb.wav`
+    `$ ffmpeg -i input_file.mp3 output_file.wav`
