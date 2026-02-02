@@ -18,6 +18,8 @@ This project uses machine learning to predict how long each word takes to speak,
 ### Installation
 
 ```bash
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -26,19 +28,19 @@ pip install -r requirements.txt
 Using the included audiobook training data (~53K words):
 
 ```bash
-python train.py --data data/audiobook_word_timings.csv --output models/duration_predictor
+python3 train.py --data data/audiobook_word_timings.csv --output models/duration_predictor
 ```
 
 ### Run Predictions
 
 On a single sentence:
 ```bash
-python predict.py --text "Hello, this is a test sentence." --duration 3.0 --model models/duration_predictor
+python3 predict.py --text "Hello, this is a test sentence." --duration 3.0 --model models/duration_predictor
 ```
 
 On an SRT file:
 ```bash
-python predict.py --input subtitles/movie.srt --model models/duration_predictor
+python3 predict.py --input subtitles/movie.srt --model models/duration_predictor
 ```
 
 ### View the Demo
@@ -46,7 +48,7 @@ python predict.py --input subtitles/movie.srt --model models/duration_predictor
 Run the web viewer to see word-by-word timing in action:
 
 ```bash
-python run_viewer.py --model models/duration_predictor
+python3 run_viewer.py --model models/duration_predictor
 ```
 
 Then open http://127.0.0.1:5000 in your browser.
