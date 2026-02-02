@@ -41,8 +41,7 @@ models/
 *.pth
 *.bin
 
-# Data (but keep structure)
-data/*.csv
+# Data
 !data/.gitkeep
 
 # Media

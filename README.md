@@ -23,10 +23,10 @@ pip install -r requirements.txt
 
 ### Train a Model
 
-Using the included audiobook data:
+Using the included audiobook training data (~53K words):
 
 ```bash
-python train.py --data "simple model using random forest regressor/Output_New.csv" --output models/duration_predictor
+python train.py --data data/audiobook_word_timings.csv --output models/duration_predictor
 ```
 
 ### Run Predictions
@@ -90,7 +90,13 @@ Uses DistilBERT for more accurate predictions:
 
 ## Training Data
 
-The model learns from audiobook data where each word's duration is known from speech recognition. The training data format:
+The model learns from audiobook data where each word's duration is known from speech recognition.
+
+### Included Data
+
+The repo includes ~53K words of training data from audiobooks in `data/audiobook_word_timings.csv`, sourced from public domain audiobooks processed through Google Cloud Speech-to-Text.
+
+### Data Format
 
 ```csv
 sentence_id,word_id,word,start_time,end_time,offset
@@ -99,6 +105,13 @@ sentence_id,word_id,word,start_time,end_time,offset
 ```
 
 The `offset` column is the word duration in seconds.
+
+### Generating New Training Data
+
+To create training data from your own audio, you need a speech recognition service that provides word-level timestamps:
+- **Whisper** (free, local): Use `whisper` with `--word_timestamps`
+- **Google Cloud Speech-to-Text**: See `example_client.py`
+- **AWS Transcribe**: Returns word timings in JSON output
 
 ## API
 
