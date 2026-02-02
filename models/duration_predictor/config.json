@@ -1,0 +1,1 @@
+{"vocab_size": 30000, "char_vocab_size": 128, "embedding_dim": 128, "char_embedding_dim": 32, "hidden_dim": 256, "num_layers": 2, "dropout": 0.1}

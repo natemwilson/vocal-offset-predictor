@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocal Offset Predictor - Subtitle Viewer</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --surface-color: #16213e;
+            --primary-color: #0f3460;
+            --accent-color: #e94560;
+            --text-color: #eaeaea;
+            --text-muted: #8b8b8b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--surface-color));
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1em;
+        }
+
+        .card {
+            background: var(--surface-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.3em;
+            margin-bottom: 16px;
+            color: var(--accent-color);
+        }
+
+        /* Video Player */
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            margin-bottom: 20px;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Subtitle Display */
+        .subtitle-display {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+        }
+
+        .subtitle-text {
+            font-size: 2em;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .subtitle-word {
+            display: inline-block;
+            margin: 0 4px;
+            opacity: 0.3;
+            transition: opacity 0.1s ease;
+        }
+
+        .subtitle-word.active {
+            opacity: 1;
+            color: var(--accent-color);
+        }
+
+        .subtitle-word.spoken {
+            opacity: 1;
+        }
+
+        /* Demo Section */
+        .demo-section {
+            margin-top: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        textarea, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1em;
+            resize: vertical;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        button {
+            padding: 12px 24px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #c73e54;
+        }
+
+        button:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        /* Word Timing Preview */
+        .timing-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--bg-color);
+            border-radius: 8px;
+        }
+
+        .preview-word {
+            display: inline-block;
+            margin: 8px 4px;
+            padding: 8px 12px;
+            background: var(--primary-color);
+            border-radius: 4px;
+            font-size: 1.1em;
+            opacity: 0.4;
+            transition: all 0.2s ease;
+        }
+
+        .preview-word.highlight {
+            opacity: 1;
+            background: var(--accent-color);
+            transform: scale(1.1);
+        }
+
+        .preview-word.past {
+            opacity: 1;
+        }
+
+        .word-duration {
+            display: block;
+            font-size: 0.7em;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        select {
+            padding: 8px 12px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 2px solid var(--primary-color);
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        /* Progress */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* Instructions */
+        .instructions {
+            background: var(--primary-color);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        /* Toggle */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary-color);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background: var(--accent-color);
+        }
+
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Vocal Offset Predictor</h1>
+            <p>Word-by-word subtitle synchronization powered by machine learning</p>
+        </header>
+
+        <!-- Demo Section -->
+        <div class="card demo-section">
+            <h2>Try It Out</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">
+                Enter any text to see how the model predicts word-by-word timing.
+            </p>
+
+            <div class="input-group">
+                <label for="demo-text">Subtitle Text</label>
+                <textarea id="demo-text" rows="3" placeholder="Enter a sentence to visualize timing...">The quick brown fox jumps over the lazy dog.</textarea>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="duration">Duration (seconds):</label>
+                    <input type="number" id="duration" value="5" min="1" max="30" step="0.5" style="width: 80px;">
+                </div>
+
+                <div class="toggle-container">
+                    <label>Use ML Model:</label>
+                    <label class="toggle">
+                        <input type="checkbox" id="use-model" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button id="predict-btn" onclick="runPrediction()">Predict Timing</button>
+            <button id="play-btn" onclick="playPreview()" disabled style="margin-left: 10px;">Play Animation</button>
+
+            <div class="timing-preview" id="preview-container">
+                <p style="color: var(--text-muted); text-align: center;">
+                    Click "Predict Timing" to see word-by-word predictions
+                </p>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="card instructions">
+            <h3>How It Works</h3>
+            <ul>
+                <li><strong>Input:</strong> A subtitle text and its total duration</li>
+                <li><strong>Model:</strong> Predicts how long each word takes to speak based on word length, syllables, and context</li>
+                <li><strong>Output:</strong> Start and end times for each word, enabling word-by-word display</li>
+                <li><strong>Use Case:</strong> Display subtitles that follow along with speech instead of showing everything at once</li>
+            </ul>
+        </div>
+
+        <!-- Video Player Section -->
+        <div class="card">
+            <h2>Video Player (Optional)</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">
+                Load a video and subtitle file to see synchronized word-by-word subtitles.
+            </p>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Video:</label>
+                    <select id="video-select">
+                        <option value="">Select a video...</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Subtitle:</label>
+                    <select id="subtitle-select">
+                        <option value="">Select a subtitle file...</option>
+                    </select>
+                </div>
+                <button onclick="loadMedia()">Load</button>
+            </div>
+
+            <div class="video-container">
+                <video id="video-player" controls>
+                    <source src="" type="video/mp4">
+                    Your browser does not support video playback.
+                </video>
+                <div class="subtitle-display">
+                    <div class="subtitle-text" id="subtitle-output"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Vocal Offset Predictor - ML-powered subtitle timing
+        </footer>
+    </div>
+
+    <script>
+        // Global state
+        let currentWords = [];
+        let playbackTimer = null;
+        let subtitleData = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadVideoList();
+            loadSubtitleList();
+        });
+
+        async function loadVideoList() {
+            try {
+                const resp = await fetch('/api/videos');
+                const data = await resp.json();
+                const select = document.getElementById('video-select');
+                data.videos.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v;
+                    opt.textContent = v;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                console.log('No videos available');
+            }
+        }
+
+        async function loadSubtitleList() {
+            try {
+                const resp = await fetch('/api/subtitles');
+                const data = await resp.json();
+                const select = document.getElementById('subtitle-select');
+                data.subtitles.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    opt.textContent = s;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                console.log('No subtitles available');
+            }
+        }
+
+        async function runPrediction() {
+            const text = document.getElementById('demo-text').value.trim();
+            const duration = parseFloat(document.getElementById('duration').value) || 5;
+            const useModel = document.getElementById('use-model').checked;
+
+            if (!text) {
+                alert('Please enter some text');
+                return;
+            }
+
+            const btn = document.getElementById('predict-btn');
+            btn.disabled = true;
+            btn.textContent = 'Predicting...';
+
+            try {
+                const resp = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text, duration})
+                });
+
+                const data = await resp.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                currentWords = data.words;
+                renderPreview();
+                document.getElementById('play-btn').disabled = false;
+
+            } catch (e) {
+                console.error(e);
+                // Fallback to uniform timing
+                const words = text.split(/\s+/);
+                const perWord = duration / words.length;
+                currentWords = words.map((w, i) => ({
+                    text: w,
+                    start_time: i * perWord,
+                    end_time: (i + 1) * perWord,
+                    duration: perWord
+                }));
+                renderPreview();
+                document.getElementById('play-btn').disabled = false;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Predict Timing';
+        }
+
+        function renderPreview() {
+            const container = document.getElementById('preview-container');
+            container.innerHTML = currentWords.map((w, i) => `
+                <span class="preview-word" data-index="${i}">
+                    ${w.text}
+                    <span class="word-duration">${w.duration.toFixed(2)}s</span>
+                </span>
+            `).join('');
+        }
+
+        function playPreview() {
+            if (playbackTimer) {
+                clearInterval(playbackTimer);
+                playbackTimer = null;
+                document.getElementById('play-btn').textContent = 'Play Animation';
+                resetHighlights();
+                return;
+            }
+
+            if (!currentWords.length) return;
+
+            document.getElementById('play-btn').textContent = 'Stop';
+            const duration = parseFloat(document.getElementById('duration').value) || 5;
+            const startTime = performance.now();
+
+            playbackTimer = setInterval(() => {
+                const elapsed = (performance.now() - startTime) / 1000;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Update progress bar
+                document.getElementById('progress').style.width = `${progress * 100}%`;
+
+                // Highlight current word
+                const words = document.querySelectorAll('.preview-word');
+                words.forEach((el, i) => {
+                    const w = currentWords[i];
+                    el.classList.remove('highlight', 'past');
+
+                    if (elapsed >= w.start_time && elapsed < w.end_time) {
+                        el.classList.add('highlight');
+                    } else if (elapsed >= w.end_time) {
+                        el.classList.add('past');
+                    }
+                });
+
+                if (elapsed >= duration) {
+                    clearInterval(playbackTimer);
+                    playbackTimer = null;
+                    document.getElementById('play-btn').textContent = 'Play Animation';
+                }
+            }, 50);
+        }
+
+        function resetHighlights() {
+            document.querySelectorAll('.preview-word').forEach(el => {
+                el.classList.remove('highlight', 'past');
+            });
+            document.getElementById('progress').style.width = '0%';
+        }
+
+        async function loadMedia() {
+            const videoFile = document.getElementById('video-select').value;
+            const subtitleFile = document.getElementById('subtitle-select').value;
+
+            if (videoFile) {
+                document.getElementById('video-player').src = `/videos/${videoFile}`;
+            }
+
+            if (subtitleFile) {
+                const useModel = document.getElementById('use-model').checked;
+                const resp = await fetch(`/api/subtitle/${subtitleFile}?model=${useModel}`);
+                subtitleData = await resp.json();
+                setupVideoSubtitles();
+            }
+        }
+
+        function setupVideoSubtitles() {
+            if (!subtitleData) return;
+
+            const video = document.getElementById('video-player');
+            const output = document.getElementById('subtitle-output');
+
+            video.ontimeupdate = () => {
+                const time = video.currentTime;
+
+                // Find current entry
+                let currentEntry = null;
+                for (const entry of subtitleData.entries) {
+                    if (time >= entry.start_time && time <= entry.end_time) {
+                        currentEntry = entry;
+                        break;
+                    }
+                }
+
+                if (!currentEntry || !currentEntry.words.length) {
+                    output.innerHTML = '';
+                    return;
+                }
+
+                // Render words with highlighting
+                output.innerHTML = currentEntry.words.map(w => {
+                    let cls = 'subtitle-word';
+                    if (time >= w.start_time && time < w.end_time) {
+                        cls += ' active';
+                    } else if (time >= w.end_time) {
+                        cls += ' spoken';
+                    }
+                    return `<span class="${cls}">${w.text}</span>`;
+                }).join(' ');
+            };
+        }
+    </script>
+</body>
+</html>
