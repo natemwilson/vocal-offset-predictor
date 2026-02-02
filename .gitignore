@@ -35,9 +35,7 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
-# Models (large files)
-models/
-*.pt
+# Models (keep trained model)
 *.pth
 *.bin
 
@@ -51,8 +49,6 @@ subtitles/*
 !subtitles/.gitkeep
 
 # Secrets
-*.json
-!package.json
 api-key*
 *.key
 .env
